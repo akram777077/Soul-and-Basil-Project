@@ -1,0 +1,15 @@
+C:\Users\AS\Desktop\Projects\Soul and Basil Project\bin\Debug\Soul and Basil Project.exe.config
+C:\Users\AS\Desktop\Projects\Soul and Basil Project\bin\Debug\Soul and Basil Project.exe
+C:\Users\AS\Desktop\Projects\Soul and Basil Project\bin\Debug\Soul and Basil Project.pdb
+C:\Users\AS\Desktop\Projects\Soul and Basil Project\obj\Debug\Soul and Basil Project.csproj.AssemblyReference.cache
+C:\Users\AS\Desktop\Projects\Soul and Basil Project\obj\Debug\Soul_and_Basil_Project.FrmMain.resources
+C:\Users\AS\Desktop\Projects\Soul and Basil Project\obj\Debug\Soul_and_Basil_Project.Properties.Resources.resources
+C:\Users\AS\Desktop\Projects\Soul and Basil Project\obj\Debug\Soul and Basil Project.csproj.GenerateResource.cache
+C:\Users\AS\Desktop\Projects\Soul and Basil Project\obj\Debug\Soul and Basil Project.csproj.CoreCompileInputs.cache
+C:\Users\AS\Desktop\Projects\Soul and Basil Project\obj\Debug\Soul and Basil Project.exe
+C:\Users\AS\Desktop\Projects\Soul and Basil Project\obj\Debug\Soul and Basil Project.pdb
+C:\Users\AS\Desktop\Projects\Soul and Basil Project\obj\Debug\Soul_and_Basil_Project.FrmPrayTime.resources
+C:\Users\AS\Desktop\Projects\Soul and Basil Project\obj\Debug\Soul_and_Basil_Project.FrmQuran.resources
+C:\Users\AS\Desktop\Projects\Soul and Basil Project\bin\Debug\Newtonsoft.Json.dll
+C:\Users\AS\Desktop\Projects\Soul and Basil Project\bin\Debug\Newtonsoft.Json.xml
+C:\Users\AS\Desktop\Projects\Soul and Basil Project\obj\Debug\Soul and.79F6DA36.Up2Date
