@@ -12,73 +12,68 @@ using System.Net;
 using System.Xml.Linq;
 using Newtonsoft.Json.Linq;
 using System.Diagnostics;
+using System.Web.UI.Design.WebControls;
+using System.Web.Security;
+using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace Soul_and_Basil_Project
 {
     public partial class FrmPrayTime : Form
     {
-        private Timer prayerTimer;
-        private DateTime[] prayerTimes;
-        private DateTime nextPrayerTime;
-        private NotifyIcon AzanNotification;
-        private NotifyIcon TasbeehNotification;
-
+        DateTime[] times;
+        TextBox[] boxes;
+        TextBox[] namesPrayers;
+        byte nextPrayer;
         public FrmPrayTime()
         {
             InitializeComponent();
-            InitializeNotifications();
-            InitializePrayerTimes();
-            StartTimer();
+
         }
-
-        private void InitializeNotifications()
+        private void FrmPrayTime_Load(object sender, EventArgs e)
         {
-            AzanNotification = new NotifyIcon
-            {
-                Visible = true,
-                Icon = SystemIcons.Application
-            };
-
-            TasbeehNotification = new NotifyIcon
-            {
-                Visible = true,
-                Icon = SystemIcons.Application
-            };
+            boxes = new TextBox[5] { txtfajr, txtzuhr, txtasr, txtmaghrib, txtisha };
+            namesPrayers = new TextBox[5] { txtBfajr, txtBzohr, txtBasr, txtBmagrib, txtBisha };
+            times = GetPrayerTimes(30.234, 23.32);
+            addPrayerTimesToBoxes();
+            
         }
-
-        private void InitializePrayerTimes()
+        private byte getNextPrayer()
         {
-            prayerTimes = FetchPrayerTimes();
-            if (prayerTimes != null && prayerTimes.Length > 0)
+            for(byte i = 0;i<5;i++)
             {
-                SetNextPrayerTime();
+                if (times[i] > DateTime.Now)
+                    return i;
+
             }
-            else
-            {
-                MessageBox.Show("Unable to fetch prayer times.");
-            }
+            return 0;
+        }
+        private void PrayTime_Tick(object sender, EventArgs e)
+        {
+            txtTimeNow.Text = DateTime.Now.ToString("HH:mm:ss");
+
+            txtPrayTimer.Text= (times[3]-DateTime.Now).ToString("hh':'mm':'ss");
+            nextPrayer = getNextPrayer();
+            textNextPrayer.Text = namesPrayers[nextPrayer].Text;
+            textCurrentPrayer.Text = namesPrayers[(nextPrayer==0)?4:nextPrayer - 1].Text;
+            txtHijri.Text=GetCompleteDateInArabic();
+            txtTodayMiladi.Text = GetCompleteGregorianDateWithArabicDaysAndMonths();
         }
 
-        private DateTime[] FetchPrayerTimes()
+        private const string ApiUrlTemplate = "https://api.aladhan.com/v1/timings/{0}?latitude={1}&longitude={2}&method=2";
+
+        public static DateTime[] GetPrayerTimes(double latitude, double longitude)
         {
-            string url = "https://api.aladhan.com/v1/calendarByCity?city=Mansoura&country=Egypt&method=2";
+            string date = DateTime.Now.ToString("dd-MM-yyyy");
+            string url = string.Format(ApiUrlTemplate, date, latitude, longitude);
 
             using (var client = new WebClient())
             {
                 string json = client.DownloadString(url);
                 JObject jsonResponse = JObject.Parse(json);
-                JArray data = (JArray)jsonResponse["data"];
+
+                JObject timings = (JObject)jsonResponse["data"]["timings"];
 
                 DateTime now = DateTime.Now;
-                int todayIndex = now.Day - 1; // Adjust for zero-indexing
-                if (todayIndex < 0 || todayIndex >= data.Count)
-                {
-                    return null;
-                }
-
-                JObject todayData = (JObject)data[todayIndex];
-                JObject timings = (JObject)todayData["timings"];
-
                 DateTime[] prayerTimes = new DateTime[5];
 
                 try
@@ -91,7 +86,7 @@ namespace Soul_and_Basil_Project
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Error parsing prayer times: " + ex.Message);
+                    Console.WriteLine("Error parsing prayer times: " + ex.Message);
                     return null;
                 }
 
@@ -99,87 +94,70 @@ namespace Soul_and_Basil_Project
             }
         }
 
-        private DateTime ParsePrayerTime(string timeString, DateTime referenceDate)
+        private static DateTime ParsePrayerTime(string timeString, DateTime referenceDate)
         {
             return DateTime.ParseExact(timeString, "HH:mm", System.Globalization.CultureInfo.InvariantCulture)
-                .AddDays(referenceDate.Day - 1)
-                .AddMonths(referenceDate.Month - 1)
-                .AddYears(referenceDate.Year - 1);
+                .AddSeconds(-referenceDate.Second)
+                .AddMilliseconds(-referenceDate.Millisecond)
+                .AddTicks(-(referenceDate.Ticks % TimeSpan.TicksPerSecond));
         }
 
-        private void StartTimer()
+        private void addPrayerTimesToBoxes()
         {
-            prayerTimer = new Timer
-            {
-                Interval = 1000 // Check every second
-            };
-            prayerTimer.Tick += PrayTime_Tick;
-            prayerTimer.Start();
-        }
+            
 
-        private void SetNextPrayerTime()
-        {
-            DateTime now = DateTime.Now;
-            nextPrayerTime = default(DateTime);
-
-            foreach (var time in prayerTimes)
+            for (short i = 0; i < 5; i++) 
             {
-                if (now < time)
-                {
-                    nextPrayerTime = time;
-                    break;
-                }
-            }
-
-            if (nextPrayerTime == default(DateTime))
-            {
-                nextPrayerTime = prayerTimes[0].AddDays(1);
+                boxes[i].Text = times[i].ToString("HH:mm");
             }
         }
 
-        private void PrayTime_Tick(object sender, EventArgs e)
+        private void txtisha_TextChanged(object sender, EventArgs e)
         {
-            TimeSpan timeRemaining = nextPrayerTime - DateTime.Now;
 
-            if (timeRemaining.TotalSeconds <= 0)
-            {
-                // Notify the user
-                SendPrayerNotification();
-
-                // Update the next prayer time
-                SetNextPrayerTime();
-            }
         }
-
-        private void SendPrayerNotification()
+        public string GetCompleteDateInArabic()
         {
-            string prayerName = GetPrayerName();
-            AzanNotification.BalloonTipIcon = ToolTipIcon.Info;
-            AzanNotification.BalloonTipTitle = "Prayer Time";
-            AzanNotification.BalloonTipText = $"It's time for {prayerName}.";
-            AzanNotification.ShowBalloonTip(1000);
+            CultureInfo arabicCulture = new CultureInfo("ar-SA");
+            DateTime today = DateTime.Now;
+            string completeDateInArabic = today.ToString("dddd, dd MMMM yyyy", arabicCulture);
+            return completeDateInArabic;
         }
-
-        private string GetPrayerName()
+        private static readonly string[] ArabicMonths = new string[]
         {
-            // Determine the prayer name based on the current time
-            DateTime now = DateTime.Now;
+            "يناير",
+            "فبراير",
+            "مارس",
+            "أبريل",
+            "مايو",
+            "يونيو",
+            "يوليو",
+            "أغسطس",
+            "سبتمبر",
+            "أكتوبر",
+            "نوفمبر",
+            "ديسمبر"
+        };
 
-            for (int i = 0; i < prayerTimes.Length; i++)
-            {
-                if (prayerTimes[i] == nextPrayerTime)
-                {
-                    switch (i)
-                    {
-                        case 0: return "Fajr";
-                        case 1: return "Dhuhr";
-                        case 2: return "Asr";
-                        case 3: return "Maghrib";
-                        case 4: return "Isha";
-                    }
-                }
-            }
-            return "Unknown Prayer";
+        private static readonly string[] ArabicDays = new string[]
+        {
+            "الأحد",
+            "الإثنين",
+            "الثلاثاء",
+            "الأربعاء",
+            "الخميس",
+            "الجمعة",
+            "السبت"
+        };
+
+        public string GetCompleteGregorianDateWithArabicDaysAndMonths()
+        {
+            DateTime today = DateTime.Now;
+            string dayOfWeek = ArabicDays[(int)today.DayOfWeek];
+            string dayOfMonth = today.Day.ToString("00");
+            string monthInArabic = ArabicMonths[today.Month - 1];
+            string year = today.Year.ToString();
+            return $"{dayOfWeek}, {dayOfMonth} {monthInArabic} {year}";
         }
     }
 }
